@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public class CrimeActivity extends SingleFragmentActivity {
 
-    public static final String EXTRA_CRAME_ID = "gooin.github.io.crime_id";
+    private static final String EXTRA_CRAME_ID = "gooin.github.io.crime_id";
 
     public static Intent newIntent(Context packageContext, UUID crimeId) {
         Intent intent = new Intent(packageContext, CrimeActivity.class);
@@ -18,7 +18,9 @@ public class CrimeActivity extends SingleFragmentActivity {
 
     @Override
     protected Fragment createFragment() {
-        return new CrimeFragment();
+        UUID crimeId = (UUID) getIntent()
+                .getSerializableExtra(EXTRA_CRAME_ID);
+        return CrimeFragment.newInstance(crimeId);
     }
 
 }
