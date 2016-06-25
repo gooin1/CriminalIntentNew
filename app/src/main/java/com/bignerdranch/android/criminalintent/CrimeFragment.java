@@ -130,7 +130,6 @@ public class CrimeFragment extends Fragment {
             updateDate();
         }
     }
-
     private void updateDate() {
         mDateButton.setText(mCrime.getDate().toString());
     }
