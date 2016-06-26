@@ -58,6 +58,7 @@ public class CrimeListFragment extends Fragment {
         updateUI();
     }
 
+
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
