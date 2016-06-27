@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.text.Editable;
@@ -19,7 +21,10 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -33,17 +38,21 @@ public class CrimeFragment extends Fragment {
 
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_CONTACT = 1;
+    private static final int REQUEST_PHOTO = 2;
 
     private Crime mCrime;
+    private File mPhotoFile;
     private EditText mTitleFiled;
     private Button mDateButton;
     private Button mReportButton;
     private Button mSuspectButton;
+    private ImageButton mPhotoButton;
+    private ImageView mPhotoView;
 
     private CheckBox mSolvedCheckBox;
 
 
-    public static CrimeFragment newInstance(UUID crimeId){
+    public static CrimeFragment newInstance(UUID crimeId) {
         Bundle args = new Bundle();
         args.putSerializable(ARG_CRIME_ID, crimeId);
 
@@ -53,25 +62,23 @@ public class CrimeFragment extends Fragment {
     }
 
 
-
-
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 //        获取extra数据取得Crime对象
         UUID crimeId = (UUID) getArguments().getSerializable(ARG_CRIME_ID);
         mCrime = CrimeLab.get(getActivity()).getCrime(crimeId);
-
+//        获取图片文件位置
+        mPhotoFile = CrimeLab.get(getActivity()).getPhotoFile(mCrime);
 
     }
+
     @Override
     public void onPause() {
         super.onPause();
         CrimeLab.get(getActivity())
                 .updateCrime(mCrime);
     }
-
 
 
     @Override
@@ -100,7 +107,7 @@ public class CrimeFragment extends Fragment {
         });
 
 
-        mDateButton=(Button) v.findViewById(R.id.crime_date);
+        mDateButton = (Button) v.findViewById(R.id.crime_date);
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE,yy-MM-dd  HH:mm ");
         String t = simpleDateFormat.format(new Date());
@@ -148,7 +155,7 @@ public class CrimeFragment extends Fragment {
                 ContactsContract.Contacts.CONTENT_URI);
         //不让任何联系人应用和你的intent匹配
 //        pickContact.addCategory(Intent.CATEGORY_HOME);
-        mSuspectButton=(Button) v.findViewById(R.id.crime_suspect);
+        mSuspectButton = (Button) v.findViewById(R.id.crime_suspect);
         mSuspectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -165,8 +172,23 @@ public class CrimeFragment extends Fragment {
             mSuspectButton.setText("请添加联系人应用");
         }
 
-
-
+        //添加photo窗口和视图窗口
+        mPhotoButton = (ImageButton) v.findViewById(R.id.crime_camera);
+        final Intent captureImage = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        boolean canTakePhoto = mPhotoFile != null;
+        mPhotoButton.setEnabled(canTakePhoto);
+        if (canTakePhoto) {
+            Uri uri = Uri.fromFile(mPhotoFile);
+            captureImage.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+        }
+        mPhotoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivityForResult(captureImage, REQUEST_PHOTO);
+            }
+        });
+        mPhotoView = (ImageView) v.findViewById(R.id.crime_photo);
+        updatePhotoView();
 
         return v;
     }
@@ -185,21 +207,21 @@ public class CrimeFragment extends Fragment {
         } else if (requestCode == REQUEST_CONTACT && data != null) {
             Uri contactUri = data.getData();
             // Specify which fields you want your query to return
-// values for.
-            String[] queryFields = new String[] {
+            // values for.
+            String[] queryFields = new String[]{
                     ContactsContract.Contacts.DISPLAY_NAME
             };
-// Perform your query - the contactUri is like a "where"
-// clause here
+            // Perform your query - the contactUri is like a "where"
+            // clause here
             Cursor c = getActivity().getContentResolver()
                     .query(contactUri, queryFields, null, null, null);
             try {
-// Double-check that you actually got results
+            // Double-check that you actually got results
                 if (c.getCount() == 0) {
                     return;
                 }
-// Pull out the first column of the first row of data -
-// that is your suspect's name.
+            // Pull out the first column of the first row of data -
+            // that is your suspect's name.
                 c.moveToFirst();
                 String suspect = c.getString(0);
                 mCrime.setSuspect(suspect);
@@ -208,19 +230,22 @@ public class CrimeFragment extends Fragment {
                 c.close();
             }
 
+        } else if (requestCode == REQUEST_PHOTO) {
+            updatePhotoView();
         }
 
 
     }
+
     private void updateDate() {
         mDateButton.setText(mCrime.getDate().toString());
     }
 
     private String getCrimeReport() {
-        String solvedString =null;
+        String solvedString = null;
         if (mCrime.isSolved()) {
             solvedString = getString(R.string.crime_report_solved);
-        }else{
+        } else {
             solvedString = getString(R.string.crime_report_unsolved);
         }
 
@@ -238,6 +263,15 @@ public class CrimeFragment extends Fragment {
         return report;
     }
 
+    private void updatePhotoView() {
+        if (mPhotoFile == null || !mPhotoFile.exists()) {
+            mPhotoView.setImageDrawable(null);
+        } else {
+            Bitmap bitmap = PictureUtils.getScaledBitmap(
+                    mPhotoFile.getPath(), getActivity());
+            mPhotoView.setImageBitmap(bitmap);
+        }
+    }
 
 
 }

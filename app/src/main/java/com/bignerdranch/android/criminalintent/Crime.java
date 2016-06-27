@@ -19,6 +19,11 @@ public class Crime {
         mSuspect = suspect;
     }
 
+    public String getPhotoFilename() {
+        return "gooin_IMG_" + getId().toString() + ".jpg";
+        
+    }
+
 
 
     public Crime() {
