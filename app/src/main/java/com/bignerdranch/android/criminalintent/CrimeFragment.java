@@ -147,7 +147,7 @@ public class CrimeFragment extends Fragment {
         final Intent pickContact = new Intent(Intent.ACTION_PICK,
                 ContactsContract.Contacts.CONTENT_URI);
         //不让任何联系人应用和你的intent匹配
-        pickContact.addCategory(Intent.CATEGORY_HOME);
+//        pickContact.addCategory(Intent.CATEGORY_HOME);
         mSuspectButton=(Button) v.findViewById(R.id.crime_suspect);
         mSuspectButton.setOnClickListener(new View.OnClickListener() {
             @Override
